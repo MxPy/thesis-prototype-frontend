@@ -77,7 +77,7 @@ const Login = () => {
             </div>
             </>) : (<>
                 <div className='flex justify-center pb-6 pt-4'>
-                <h1 className='text-3xl font-semibold text-[#446FB1]'>Registration</h1>
+                <h1 className='text-3xl font-semibold text-[#446FB1]'>Register</h1>
             </div>
             <Form
                 layout={'horizontal'}
