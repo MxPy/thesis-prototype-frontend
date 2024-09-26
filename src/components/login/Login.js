@@ -50,7 +50,7 @@ const Login = () => {
       if (expirationDate) {
         const date = new Date(expirationDate);
         if (isNaN(date.getTime())) {
-          throw new Error("Nieprawidłowa data wygaśnięcia");
+          throw new Error("wrong date");
         }
         cookieString += `; expires=${date.toUTCString()}`;
       }
@@ -58,21 +58,52 @@ const Login = () => {
       cookieString += "; path=/";
       
       document.cookie = cookieString;
-      console.log("Próba ustawienia ciasteczka:", cookieString);
-      
-      // Sprawdź, czy ciasteczko zostało ustawione
-      setTimeout(() => {
-        if (document.cookie.split(';').some(item => item.trim().startsWith(`${encodeURIComponent(key)}=`))) {
-          console.log("Ciasteczko zostało pomyślnie ustawione");
-        } else {
-          console.error("Nie można potwierdzić ustawienia ciasteczka");
-        }
-      }, 100);
   
     } catch (error) {
-      console.error("Błąd podczas ustawiania ciasteczka:", error);
+      console.error("cookie set error: ", error);
     }
   }
+
+  //we use it cause cookies are blocked in http connection by default in prod use setcookie
+  function setLocalStorage(key, value, expirationDate) {
+    try {
+      const item = {
+        value: value,
+        expiration: expirationDate ? new Date(expirationDate).getTime()+ (2*60*60*1000) : null
+      };
+
+      localStorage.setItem(key, JSON.stringify(item));
+  
+    } catch (error) {
+      console.error("Błąd podczas zapisu do localStorage:", error);
+    }
+  }
+
+  function getFromLocalStorage(key) {
+    try {
+      const item = localStorage.getItem(key);
+      if (!item) return null;
+      
+      
+      const parsedItem = JSON.parse(item);
+      if (parsedItem.expiration && new Date().getTime() > parsedItem.expiration) {
+        localStorage.removeItem(key);
+        console.log(`Item '${key}' wygasł i został usunięty z localStorage.`);
+        return null;
+      }
+  
+      return parsedItem.value;
+    } catch (error) {
+      console.error("Błąd podczas odczytu z localStorage:", error);
+      return null;
+    }
+  }
+
+  useEffect(() => {
+    if (getFromLocalStorage("token") !== null){
+        return navigate("/");
+    }
+  }, [])
 
   function handle_login_request(value) {
     console.log(value);
@@ -80,8 +111,8 @@ const Login = () => {
     const user = new UserLogin(value.username, value.password)
     auth.loginAuthLoginPost(user).then((response) => {
         console.log(response.data.expiration_date, response.response.headers.session_id);
-        setCookie("token", response.response.headers.session_id, response.data.expiration_date)
-        //return navigate("/")
+        setLocalStorage("token", response.response.headers.session_id, response.data.expiration_date)
+        return navigate("/")
       })
       .catch((error) => {
         console.log(error);
@@ -144,25 +175,49 @@ const Login = () => {
                             height: '46px',
                             borderRadius: "100px",
                             overflow: "hidden",
+                            fontWeight: 'bold',
                             backgroundImage: "linear-gradient(to right, #80A1D4, #75C9C8)",
                              }} type="primary">Login
                     </Button>
                 </Form.Item>
                 
             </Form>
-            <div className='flex items-center justify-center pb-20'>
-                    <Button style={{
+            <div className='flow-root '>
+                        <div className='float-left  '><Button style={{
                             width: '120px',
                             height: '30px',
                             borderRadius: "100px",
                             overflow: "hidden",
-                             backgroundImage: "linear-gradient(to right, #80A1D4, #75C9C8)",
+                            border: 'solid',
+                            fontWeight: 'bold',
+                            borderColor: "#80A1D4",
+                            color:"#80A1D4",
                              }} 
                              onClick={handle_register}
-                             type="primary">
-                            Register
+                             type="link">
+                            <div>
+                              Register
+                            </div>
+                    </Button></div>
+                        <div className=' float-right'>
+                        <Button style={{
+                            width: '125px',
+                            height: '30px',
+                            borderRadius: "100px",
+                            overflow: "hidden",
+                            border: 'solid',
+                            fontWeight: 'bold',
+                            borderColor: "#80A1D4",
+                            color:"#80A1D4",
+                             }} 
+                             onClick={handle_register}
+                             type="link">
+                            <div>
+                            Forgot Password
+                            </div>
                     </Button>
-            </div>
+                        </div>
+                    </div>
             </>) : (<>{showRessetPasswordModal ? (<>
                     <h1 className='text-3xl text-center font-bold text-[#ff3636] pb-6'>Register</h1>
                     <p className='text-xl text-center pb-10'>
@@ -208,6 +263,7 @@ const Login = () => {
                                     height: '46px',
                                     borderRadius: "100px",
                                     overflow: "hidden",
+                                    fontWeight: 'bold',
                                     backgroundImage: "linear-gradient(to right, #80A1D4, #75C9C8)",
                                     }} type="primary">Register
                                     
@@ -216,15 +272,18 @@ const Login = () => {
                         
                     </Form>
                     <div className='flex items-center justify-center pb-20'>
-                            <Button style={{
-                                    width: '120px',
-                                    height: '30px',
-                                    borderRadius: "100px",
-                                    overflow: "hidden",
-                                    backgroundImage: "linear-gradient(to right, #80A1D4, #75C9C8)",
+                            <Button  style={{
+                                   width: '125px',
+                                   height: '30px',
+                                   borderRadius: "100px",
+                                   overflow: "hidden",
+                                   border: 'solid',
+                                   fontWeight: 'bold',
+                                   borderColor: "#80A1D4",
+                                   color:"#80A1D4",
                                     }} 
                                     onClick={handle_register}
-                                    type="primary">
+                                    type="link">
                                     Login
                             </Button>
                     </div>
